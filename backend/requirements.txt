@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+pydantic
+sqlalchemy
+pg8000
+python-dotenv
+twilio
+google-cloud-aiplatform
+google-cloud-speech
+google-cloud-texttospeech
+websockets
+json-logging
