@@ -1,6 +1,7 @@
 from vertexai.generative_models import GenerativeModel, Content, Part
 import vertexai
 from backend.config.settings import settings
+from backend.agents.prompts import get_system_prompt
 import asyncio
 
 class AI_FollowUp_Agent:
@@ -15,15 +16,7 @@ class AI_FollowUp_Agent:
         vertexai.init(project=settings.GCP_PROJECT_ID, location=settings.GCP_LOCATION)
         self.model = GenerativeModel(
             model_name=settings.VERTEX_AI_MODEL,
-            system_instruction=[
-                "You are Emily, a friendly and empathetic AI medical assistant calling on behalf of the clinic.",
-                f"You are speaking to {self.patient_name}.",
-                f"The consultation summary is: {self.consultation_summary}",
-                "Your job is to check on the patient, ask how they are feeling, and if they have adhered to any medication.",
-                "Keep responses extremely brief (1-2 sentences max) as this is a spoken phone conversation.",
-                "Do not use markdown, emojis, or bullet points.",
-                "Always end your turn with a question to prompt the patient."
-            ]
+            system_instruction=get_system_prompt(self.patient_name, self.consultation_summary)
         )
         self.chat = self.model.start_chat()
         
