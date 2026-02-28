@@ -1,15 +1,22 @@
-fastapi
-uvicorn
-pydantic
-sqlalchemy
-pg8000
-python-dotenv
-twilio
-google-cloud-aiplatform
-google-cloud-storage
-websockets
-json-logging
-pinecone-client
-deepgram-sdk
-pdfplumber
-python-multipart
+fastapi==0.109.2
+uvicorn==0.27.1
+sqlalchemy==2.0.25
+pydantic>=2.9.0
+pydantic-settings>=2.4.0
+pg8000==1.30.5
+python-multipart==0.0.9
+
+# Telephony
+twilio==8.12.0
+
+# Vector DB
+pinecone-client==3.1.0
+
+# PDF Extraction
+pdfplumber==0.10.3
+
+# Google Cloud SDKs (New Native Architecture)
+google-cloud-storage==2.14.0
+google-cloud-aiplatform==1.42.1
+google-cloud-speech==2.25.0
+google-cloud-texttospeech==2.16.0
