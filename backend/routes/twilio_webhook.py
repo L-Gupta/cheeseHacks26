@@ -2,7 +2,7 @@ from fastapi import APIRouter, WebSocket, Request, Response
 import json
 import asyncio
 from backend.config.settings import settings
-from backend.agents.followup_agent import AI_FollowUp_Agent
+from backend.services.gemini_service import GeminiService
 
 router = APIRouter(prefix="/twilio", tags=["twilio"])
 
@@ -33,8 +33,8 @@ async def websocket_endpoint(websocket: WebSocket, consultation_id: str):
     
     stream_sid = None
     
-    # Initialize our AI agent which encapsulates Vertex AI, STT, and TTS
-    agent = AI_FollowUp_Agent(consultation_id=consultation_id)
+    # Initialize our AI agent which encapsulates Vertex AI, Google STT, and Google TTS
+    agent = GeminiService(consultation_id=consultation_id)
     await agent.initialize()
 
     # Task to read audio from Agent's TTS and forward to Twilio

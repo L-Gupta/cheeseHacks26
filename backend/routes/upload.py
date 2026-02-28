@@ -9,12 +9,14 @@ from backend.models.consultation import Consultation
 from backend.services.pdf_parser import extract_text_from_pdf
 from backend.services.embedding_service import EmbeddingService
 from backend.services.pinecone_service import PineconeService
+from backend.services.gcs_service import GCSService
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
 # Initialize services (lazy load or dependency inject in real app)
 embedder = EmbeddingService()
 pinecone_db = PineconeService()
+gcs_service = GCSService()
 
 @router.post("/consultation")
 async def upload_consultation(
@@ -36,9 +38,9 @@ async def upload_consultation(
     # Read PDF bytes
     content = await file.read()
     
-    # Optional Real GCS upload:
-    # url = upload_to_gcs(content, file.filename)
-    pdf_url = f"gs://patient-pdfs/{uuid.uuid4()}_{file.filename}"
+    # Upload to Real GCS Bucket
+    destination_name = f"{uuid.uuid4()}_{file.filename}"
+    pdf_url = gcs_service.upload_pdf(content, destination_name)
 
     # Extract text
     summary_text = extract_text_from_pdf(content)
