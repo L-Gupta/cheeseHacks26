@@ -8,7 +8,7 @@ def get_twilio_client():
         return None
     return Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
 
-def initiate_outbound_call(phone_number: str, consultation_id: int):
+def initiate_outbound_call(phone_number: str, consultation_id: str):
     """
     Initates a call to the patient via Twilio.
     Tells Twilio to fetch TwiML from our /twilio/twiml endpoint which will

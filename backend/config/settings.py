@@ -15,12 +15,21 @@ class Settings(BaseSettings):
     TWILIO_PHONE_NUMBER: str = os.getenv("TWILIO_PHONE_NUMBER", "")
     
     # Google Cloud Settings
-    GCP_PROJECT_ID: str = os.getenv("GCP_PROJECT_ID", "")
+    GOOGLE_PROJECT_ID: str = os.getenv("GOOGLE_PROJECT_ID", "")
     GCP_LOCATION: str = os.getenv("GCP_LOCATION", "us-central1")
+    GOOGLE_APPLICATION_CREDENTIALS: str = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
     
     # Vertex AI Settings
-    VERTEX_AI_MODEL: str = os.getenv("VERTEX_AI_MODEL", "gemini-1.5-pro-preview-0409")
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    VERTEX_AI_MODEL: str = os.getenv("VERTEX_AI_MODEL", "gemini-2.5-flash")
     
+    # Pinecone
+    PINECONE_API_KEY: str = os.getenv("PINECONE_API_KEY", "")
+    PINECONE_ENV: str = os.getenv("PINECONE_ENV", "")
+    
+    # Deepgram
+    DEEPGRAM_API_KEY: str = os.getenv("DEEPGRAM_API_KEY", "")
+
     # Hostname (for Twilio Webhooks)
     HOST_DOMAIN: str = os.getenv("HOST_DOMAIN", "") # e.g. "my-app-xyz.a.run.app"
 

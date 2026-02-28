@@ -10,7 +10,7 @@ router = APIRouter(prefix="/patients", tags=["patients"])
 class PatientCreate(BaseModel):
     name: str
     phone_number: str
-    doctor_id: int
+    doctor_id: str
 
 @router.post("/")
 def create_patient(patient: PatientCreate, db: Session = Depends(get_db)):
@@ -29,7 +29,7 @@ def create_patient(patient: PatientCreate, db: Session = Depends(get_db)):
     return new_patient
 
 @router.get("/{patient_id}")
-def get_patient(patient_id: int, db: Session = Depends(get_db)):
+def get_patient(patient_id: str, db: Session = Depends(get_db)):
     patient = db.query(Patient).filter(Patient.id == patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")

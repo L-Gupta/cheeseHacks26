@@ -7,7 +7,7 @@ from backend.agents.followup_agent import AI_FollowUp_Agent
 router = APIRouter(prefix="/twilio", tags=["twilio"])
 
 @router.post("/twiml")
-async def generate_twiml(request: Request, consultation_id: int):
+async def generate_twiml(request: Request, consultation_id: str):
     """
     Endpoint Twilio hits when the call connects.
     Returns TwiML instructing Twilio to start a WebSocket Media Stream.
@@ -23,7 +23,7 @@ async def generate_twiml(request: Request, consultation_id: int):
     return Response(content=twiml, media_type="application/xml")
 
 @router.websocket("/stream/{consultation_id}")
-async def websocket_endpoint(websocket: WebSocket, consultation_id: int):
+async def websocket_endpoint(websocket: WebSocket, consultation_id: str):
     """
     WebSocket endpoint handling the Twilio bidirectional audio stream.
     Receives base64 encoded audio from Twilio -> sends to Google STT -> Agent -> Google TTS -> sends generated base64 audio to Twilio.

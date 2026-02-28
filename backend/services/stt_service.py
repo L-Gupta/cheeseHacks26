@@ -1,81 +1,76 @@
-import os
-from google.cloud import speech
-from google.api_core.exceptions import OutOfRange
+import websockets
+import json
+import asyncio
+import base64
+from backend.config.settings import settings
 
 class STTService:
     def __init__(self, callback):
-        self.client = speech.SpeechAsyncClient()
-        self.config = speech.RecognitionConfig(
-            encoding=speech.RecognitionConfig.AudioEncoding.MULAW,
-            sample_rate_hertz=8000,
-            language_code="en-US",
-            model="phone_call", # Optimized for phone interactions
-            use_enhanced=True
-        )
-        self.streaming_config = speech.StreamingRecognitionConfig(
-            config=self.config,
-            interim_results=False # Set to True if you want partial interrupts
-        )
-        
-        self.audio_queue = asyncio.Queue()
         self.callback = callback
-        self.stream_task = None
+        self.ws = None
+        self.audio_queue = asyncio.Queue()
         self.is_running = False
+        self.recv_task = None
+        self.send_task = None
 
     async def initialize(self):
         self.is_running = True
-        self.stream_task = asyncio.create_task(self._process_stream())
-
-    async def add_chunk(self, chunk: bytes):
-        if self.is_running:
-            await self.audio_queue.put(chunk)
-
-    async def _generator(self):
-        while self.is_running:
-            chunk = await self.audio_queue.get()
-            if chunk is None:
-                return
-            yield speech.StreamingRecognizeRequest(audio_content=chunk)
-
-    async def _process_stream(self):
+        
+        # Connect to Deepgram Nova-2 via WebSockets
+        url = "wss://api.deepgram.com/v1/listen?encoding=mulaw&sample_rate=8000&channels=1&model=nova-2-phonecall&endpointing=500"
+        headers = {"Authorization": f"Token {settings.DEEPGRAM_API_KEY}"}
+        
         try:
-            requests = self._generator()
-            
-            # Asynchronous streaming
-            responses = await self.client.streaming_recognize(
-                config=self.streaming_config,
-                requests=requests
-            )
-            
-            async for response in responses:
-                if not response.results:
-                    continue
-                result = response.results[0]
-                if not result.alternatives:
-                    continue
-                
-                transcript = result.alternatives[0].transcript
-                if result.is_final:
-                    # Pass the fully transcribed phrase back to the Agent
-                    await self.callback(transcript)
-                    
-        except OutOfRange:
-            # Google streaming limits out (approx 5 mins). Restart stream if needed.
-            print("STT Stream timed out, restarting usually handled here.")
+            self.ws = await websockets.connect(url, extra_headers=headers)
+            print("Connected to Deepgram STT WebSocket")
+            self.recv_task = asyncio.create_task(self._receive_loop())
+            self.send_task = asyncio.create_task(self._send_loop())
         except Exception as e:
-            print(f"STT stream exception: {e}")
+            print(f"Failed to connect to Deepgram STT: {e}")
 
     async def capture_input(self, audio_chunk_base64: str):
-        """
-        Receives base64 audio from Twilio WebSocket and passes it to the queue
-        """
-        import base64
-        # Decode base64 to byte payload
+        """Receives base64 audio from Twilio and queues it for Deepgram"""
         decoded_bytes = base64.b64decode(audio_chunk_base64)
-        await self.add_chunk(decoded_bytes)
+        if self.is_running:
+            await self.audio_queue.put(decoded_bytes)
+
+    async def _send_loop(self):
+        """Pops raw audio bytes from queue and sends them to Deepgram"""
+        try:
+            while self.is_running and self.ws:
+                chunk = await self.audio_queue.get()
+                if chunk is None:
+                     # Send CloseStream message to Deepgram
+                     await self.ws.send(json.dumps({"type": "CloseStream"}))
+                     break
+                await self.ws.send(chunk)
+        except Exception as e:
+            print(f"Deepgram sending error: {e}")
+
+    async def _receive_loop(self):
+        """Listens for transcripts from Deepgram"""
+        try:
+            while self.is_running and self.ws:
+                msg = await self.ws.recv()
+                data = json.loads(msg)
+                
+                # Check for transcript
+                if data.get("type") == "Results":
+                     is_final = data.get("is_final", False)
+                     alternatives = data.get("channel", {}).get("alternatives", [])
+                     if alternatives:
+                         transcript = alternatives[0].get("transcript", "")
+                         if is_final and transcript.strip():
+                             await self.callback(transcript)
+        except websockets.exceptions.ConnectionClosed:
+            print("Deepgram STT connection closed.")
+        except Exception as e:
+            print(f"Deepgram receiving error: {e}")
 
     async def close(self):
         self.is_running = False
         await self.audio_queue.put(None)
-        if self.stream_task:
-            await self.stream_task
+        if self.recv_task:
+            self.recv_task.cancel()
+        if self.ws:
+            await self.ws.close()
