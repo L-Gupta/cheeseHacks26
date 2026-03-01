@@ -1,10 +1,10 @@
-# 🩺 AI Patient Follow-Up Agent
+# AI Patient Follow-Up Agent
 
 An AI-powered healthcare assistant that automatically performs post-consultation follow-ups with patients via phone calls. The system schedules follow-ups after a doctor visit, calls patients using an AI voice agent, collects health updates, and escalates concerns to doctors when necessary.
 
 ---
 
-## 🚀 Problem
+## Problem
 
 After consultations, doctors prescribe treatment but often lose track of patient progress. Patients must book another appointment for simple follow-ups, leading to:
 
@@ -17,7 +17,7 @@ This project automates follow-up care using an AI agent that contacts patients a
 
 ---
 
-## 💡 Solution
+## Solution
 
 Doctors upload consultation notes and define a follow-up interval.
 An AI agent automatically calls the patient, conducts a structured health check, and summarizes outcomes.
@@ -30,46 +30,49 @@ An AI agent automatically calls the patient, conducts a structured health check,
 4. AI calls patient automatically
 5. AI collects symptoms + responses
 6. AI classifies patient condition
-7. If needed → doctor notified for escalation
+7. If needed -> doctor notified for escalation
 
 ---
 
-## 🧱 System Architecture
+## System Architecture
 
 ```
 Doctor Dashboard
-        │
-        ▼
+        |
+        v
    FastAPI Backend
-        │
- ┌──────┼───────────────┐
- │      │               │
- ▼      ▼               ▼
-Database Scheduler   AI Agent
-(PostgreSQL)         (LLM)
-        │               │
-        ▼               ▼
-     Twilio  ⇄  Deepgram Voice
-            (Call + Speech)
+        |
+ +------+-----------------------+
+ |      |                       |
+ v      v                       v
+Database Cloud Scheduler        AI Agent (Gemini)
+(PostgreSQL) (/trigger-followups) + RAG (Pinecone)
+        |                       |
+        v                       v
+     Twilio <-> Google STT / Google TTS
+          (Bidirectional Media Stream)
 ```
 
 ---
 
-## 🧰 Tech Stack
+## Tech Stack
 
 ### Backend
 
-* **FastAPI** — API server & webhooks
+* **FastAPI** - API server & webhooks
 * **Python 3.11+**
-* **SQLAlchemy** — ORM
-* **Pydantic** — validation
-* **Background Scheduler (APScheduler / Celery)** — follow-up jobs
+* **SQLAlchemy + pg8000** - ORM + PostgreSQL driver
+* **Pydantic + pydantic-settings** - validation & config
+* **Google Cloud Scheduler trigger endpoint** - follow-up jobs
 
 ### AI & Voice
 
-* **LLM:** Gemini (free tier) or Claude (free tier)
-* **Speech-to-Text:** Deepgram STT
-* **Text-to-Speech:** Deepgram TTS
+* **LLM:** Gemini via **Vertex AI** (`gemini-2.5-flash`)
+* **Speech-to-Text:** **Google Cloud Speech-to-Text**
+* **Text-to-Speech:** **Google Cloud Text-to-Speech**
+* **Vector Search (RAG):** **Pinecone**
+* **Document Storage:** **Google Cloud Storage**
+* **PDF Parsing:** **pdfplumber**
 * **Conversation Orchestration:** Custom AI agent logic
 
 ### Telephony
@@ -79,67 +82,79 @@ Database Scheduler   AI Agent
   * Outbound calls
   * Webhook streaming
   * Call lifecycle events
+* **Twilio SMS** for doctor escalation alerts
 
 ### Database
 
 * **PostgreSQL**
-* Optional: **Redis** (priority scheduling)
 
 ### Frontend (Doctor Dashboard)
 
-* **Next.js**
-* **React**
-* **Tailwind CSS**
+* **Next.js 16**
+* **React 19**
+* **TypeScript**
+* **Tailwind CSS v4**
+* **Framer Motion**
 
 ### Hosting
 
-* Backend: Railway / Render / Fly.io
-* Database: Supabase / Neon
-* Frontend: Vercel
+* Backend: **Google Cloud Run**
+* Cloud services: **Vertex AI, Cloud Speech, Cloud TTS, Cloud Storage**
+* Database: **PostgreSQL** (managed or self-hosted)
+* Frontend: **Next.js app**
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 backend/
-│
-├── main.py
-├── config/
-│   ├── settings.py
-│   └── database.py
-│
-├── models/
-│   ├── patient.py
-│   ├── consultation.py
-│   └── call_log.py
-│
-├── routes/
-│   ├── doctor_routes.py
-│   ├── patient_routes.py
-│   └── twilio_webhook.py
-│
-├── services/
-│   ├── scheduler.py
-│   ├── call_service.py
-│   ├── ai_agent.py
-│   ├── stt_service.py
-│   ├── tts_service.py
-│   └── escalation_service.py
-│
-├── agents/
-│   ├── followup_agent.py
-│   ├── prompts.py
-│   └── triage_logic.py
-│
-└── utils/
-    ├── logger.py
-    └── helpers.py
+|
+|-- main.py
+|-- config/
+|   |-- settings.py
+|   `-- database.py
+|
+|-- models/
+|   |-- patient.py
+|   |-- consultation.py
+|   `-- call_log.py
+|
+|-- routes/
+|   |-- followups.py
+|   |-- patient_routes.py
+|   |-- twilio_webhook.py
+|   `-- upload.py
+|
+|-- services/
+|   |-- scheduler.py
+|   |-- call_service.py
+|   |-- gemini_service.py
+|   |-- speech_to_text.py
+|   |-- text_to_speech.py
+|   |-- embedding_service.py
+|   |-- pinecone_service.py
+|   |-- gcs_service.py
+|   |-- pdf_parser.py
+|   |-- session_state.py
+|   `-- escalation_service.py
+|
+|-- agents/
+|   |-- prompts.py
+|   `-- triage_logic.py
+|
+`-- utils/
+    `-- helpers.py
+
+frontend/
+|-- src/
+|-- package.json
+`-- next.config.ts
 ```
 
 ---
 
-## 🗄️ Database Schema
+## Database Schema
 
 ### Patients
 
@@ -156,9 +171,11 @@ created_at
 ```
 id
 patient_id
-summary
+doctor_id
+pdf_url
+summary_text
 follow_up_date
-status (pending/completed/escalated)
+status (pending/calling/completed/escalated)
 created_at
 ```
 
@@ -166,17 +183,20 @@ created_at
 
 ```
 id
+conversation_id
 consultation_id
 transcript
 ai_summary
 urgency_level
+call_duration
 call_status
+dashboard_alert
 created_at
 ```
 
 ---
 
-## 🤖 AI Agent Design
+## AI Agent Design
 
 The AI agent performs structured medical follow-ups.
 
@@ -200,13 +220,18 @@ The AI agent performs structured medical follow-ups.
 
 ---
 
-## ⏱ Scheduling Strategy
+## Scheduling Strategy
 
 Follow-ups are triggered using:
 
 ### MVP
 
-Query database periodically:
+Google Cloud Scheduler calls the backend trigger endpoint periodically:
+
+* `GET /trigger-followups`
+* `POST /cron/trigger-followups`
+
+The backend then queries due consultations:
 
 ```sql
 SELECT * FROM consultations
@@ -216,26 +241,25 @@ AND status = 'pending';
 
 ### Optional Advanced
 
-Redis Sorted Set:
-
-* score = follow-up timestamp
-* auto-pop due patients
+Migrate scheduler trigger to a queue-based workflow (e.g., Cloud Tasks) for higher scale and retries.
 
 ---
 
-## 📞 Call Flow
+## Call Flow
 
 1. Scheduler detects due follow-up
 2. Backend triggers Twilio outbound call
 3. Twilio connects to webhook
-4. Audio streamed to Deepgram
-5. AI processes conversation
-6. Responses stored
-7. Escalation triggered if necessary
+4. Audio streamed to backend WebSocket
+5. Google STT transcribes patient speech
+6. Gemini generates responses
+7. Google TTS synthesizes AI replies
+8. Responses + triage stored
+9. Escalation triggered if necessary
 
 ---
 
-## 🔐 Safety Considerations
+## Safety Considerations
 
 * AI never provides medical diagnosis
 * Always advises contacting doctor for emergencies
@@ -245,13 +269,13 @@ Redis Sorted Set:
 
 ---
 
-## 🧪 Local Setup
+## Local Setup
 
 ### 1. Clone Repo
 
 ```
 git clone <repo-url>
-cd ai-followup-agent
+cd cheeseHacks26
 ```
 
 ### 2. Create Environment
@@ -273,21 +297,28 @@ Create `.env`:
 
 ```
 DATABASE_URL=
-DEEPGRAM_API_KEY=
 TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
-LLM_API_KEY=
+TWILIO_PHONE_NUMBER=
+DOCTOR_ALERT_PHONE_NUMBER=
+HOST_DOMAIN=
+GOOGLE_PROJECT_ID=
+GCP_LOCATION=us-central1
+GOOGLE_APPLICATION_CREDENTIALS=
+VERTEX_AI_MODEL=gemini-2.5-flash
+PINECONE_API_KEY=
+PINECONE_ENV=
 ```
 
 ### 5. Run Server
 
 ```
-uvicorn main:app --reload
+uvicorn backend.main:app --reload
 ```
 
 ---
 
-## 🎯 MVP Features
+## MVP Features
 
 * Doctor uploads consultation
 * Automated follow-up scheduling
@@ -298,7 +329,18 @@ uvicorn main:app --reload
 
 ---
 
-## ⭐ Future Improvements
+## Demo Runtime Notes (Cloud Run)
+
+For hackathon demo stability with Twilio media streams, deploy with a single instance:
+
+* min instances = 1
+* max instances = 1
+
+This avoids cross-instance session loss for live call state.
+
+---
+
+## Future Improvements
 
 * Multilingual patient calls
 * Emotion detection
@@ -310,7 +352,7 @@ uvicorn main:app --reload
 
 ---
 
-## 🏆 Hackathon Value Proposition
+## Hackathon Value Proposition
 
 * Reduces unnecessary appointments
 * Improves patient outcomes
@@ -319,12 +361,12 @@ uvicorn main:app --reload
 
 ---
 
-## 📜 License
+## License
 
 MIT License
 
 ---
 
-## 👥 Contributors
+## Contributors
 
-Hackathon Team — AI Patient Follow-Up Agent
+Hackathon Team - AI Patient Follow-Up Agent

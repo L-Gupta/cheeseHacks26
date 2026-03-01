@@ -6,10 +6,9 @@ from backend.config.database import get_db
 from backend.models.consultation import Consultation
 from backend.services.call_service import initiate_outbound_call
 
-router = APIRouter(prefix="/cron", tags=["cloud_scheduler"])
+router = APIRouter(tags=["cloud_scheduler"])
 
-@router.post("/trigger-followups")
-def trigger_scheduled_followups(db: Session = Depends(get_db)):
+def _trigger_scheduled_followups(db: Session):
     """
     Called by Google Cloud Scheduler every X minutes.
     Finds pending consultations due for follow-up and initiates calls via Twilio.
@@ -30,7 +29,7 @@ def trigger_scheduled_followups(db: Session = Depends(get_db)):
     for consultation in due_consultations:
         try:
             # Lock the consultation before dialing to avoid duplicate calls from overlapping cron runs.
-            consultation.status = "in_progress"
+            consultation.status = "calling"
             db.commit()
             db.refresh(consultation)
 
@@ -41,17 +40,25 @@ def trigger_scheduled_followups(db: Session = Depends(get_db)):
                 consultation_id=consultation.id
             )
             if success:
-                results.append({"id": consultation.id, "status": "in_progress"})
+                results.append({"id": str(consultation.id), "status": "calling"})
             else:
                 consultation.status = "pending"
                 db.commit()
-                results.append({"id": consultation.id, "status": "call_failed"})
+                results.append({"id": str(consultation.id), "status": "call_failed"})
         except Exception as e:
             try:
                 consultation.status = "pending"
                 db.commit()
             except Exception:
                 db.rollback()
-            results.append({"id": consultation.id, "status": f"error: {str(e)}"})
+            results.append({"id": str(consultation.id), "status": f"error: {str(e)}"})
 
     return {"processed": len(due_consultations), "results": results}
+
+@router.get("/trigger-followups")
+def trigger_scheduled_followups_get(db: Session = Depends(get_db)):
+    return _trigger_scheduled_followups(db)
+
+@router.post("/cron/trigger-followups")
+def trigger_scheduled_followups_legacy(db: Session = Depends(get_db)):
+    return _trigger_scheduled_followups(db)

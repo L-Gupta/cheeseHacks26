@@ -21,25 +21,27 @@ gcloud run deploy $SERVICE_NAME \
   --image $IMAGE_NAME \
   --platform managed \
   --region $REGION \
+  --min-instances=1 \
+  --max-instances=1 \
   --allow-unauthenticated \
   --add-cloudsql-instances $PROJECT_ID:$REGION:$DB_INSTANCE_NAME \
-  --set-env-vars="GCP_PROJECT_ID=$PROJECT_ID,GCP_LOCATION=$REGION,DATABASE_URL=postgresql+pg8000://$DB_USER:YOUR_PASSWORD@/$DB_NAME?unix_sock=/cloudsql/$PROJECT_ID:$REGION:$DB_INSTANCE_NAME/.s.PGSQL.5432"
+  --set-env-vars="GOOGLE_PROJECT_ID=$PROJECT_ID,GCP_LOCATION=$REGION,DATABASE_URL=postgresql+pg8000://$DB_USER:YOUR_PASSWORD@/$DB_NAME?unix_sock=/cloudsql/$PROJECT_ID:$REGION:$DB_INSTANCE_NAME/.s.PGSQL.5432"
 
 # 3. Get the URL
 URL=$(gcloud run services describe $SERVICE_NAME --platform managed --region $REGION --format 'value(status.url)')
 echo "Service deployed at: $URL"
 
 # 4. Setup Cloud Scheduler (if not exists)
-echo "Setting up Cloud Scheduler to hit $URL/cron/trigger-followups every 15 minutes..."
+echo "Setting up Cloud Scheduler to hit $URL/trigger-followups every 15 minutes..."
 gcloud scheduler jobs create http trigger-followups-job \
   --schedule="*/15 * * * *" \
-  --uri="$URL/cron/trigger-followups" \
-  --http-method=POST \
+  --uri="$URL/trigger-followups" \
+  --http-method=GET \
   --location=$REGION \
   || gcloud scheduler jobs update http trigger-followups-job \
   --schedule="*/15 * * * *" \
-  --uri="$URL/cron/trigger-followups" \
-  --http-method=POST \
+  --uri="$URL/trigger-followups" \
+  --http-method=GET \
   --location=$REGION
 
 echo "Deployment complete."

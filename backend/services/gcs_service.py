@@ -22,7 +22,7 @@ class GCSService:
         """Uploads a file to the bucket and returns the standard gs:// URL."""
         if not self.bucket:
              print("GCS Bucket not initialized.")
-             return f"gs://{self.bucket_name}/{destination_blob_name}"
+             return ""
              
         try:
             blob = self.bucket.blob(destination_blob_name)

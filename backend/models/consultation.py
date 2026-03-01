@@ -14,7 +14,7 @@ class Consultation(Base):
     pdf_url = Column(String)
     summary_text = Column(String)
     follow_up_date = Column(DateTime(timezone=True))
-    status = Column(String, default="pending") # pending, in_progress, completed, escalated
+    status = Column(String, default="pending") # pending, calling, completed, escalated
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     patient = relationship("Patient")

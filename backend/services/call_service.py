@@ -1,6 +1,6 @@
-import os
 from twilio.rest import Client
 from backend.config.settings import settings
+from backend.utils.helpers import normalize_phone_number
 
 def get_twilio_client():
     if not settings.TWILIO_ACCOUNT_SID or not settings.TWILIO_AUTH_TOKEN:
@@ -17,6 +17,11 @@ def initiate_outbound_call(phone_number: str, consultation_id: str):
     client = get_twilio_client()
     if not client:
         return False
+
+    ok_phone, normalized_phone = normalize_phone_number(phone_number)
+    if not ok_phone:
+        print(f"Invalid phone number for consultation {consultation_id}: {phone_number}")
+        return False
         
     try:
         # The URL Twilio will fetch when the call connects
@@ -24,7 +29,7 @@ def initiate_outbound_call(phone_number: str, consultation_id: str):
         twiml_url = f"https://{settings.HOST_DOMAIN}/twilio/twiml?consultation_id={consultation_id}"
         
         call = client.calls.create(
-            to=phone_number,
+            to=normalized_phone,
             from_=settings.TWILIO_PHONE_NUMBER,
             url=twiml_url,
             record=False # We capture audio via stream, not Twilio recording

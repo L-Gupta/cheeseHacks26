@@ -2,7 +2,7 @@ from vertexai.generative_models import GenerativeModel
 import vertexai
 from backend.config.settings import settings
 from backend.agents.prompts import TRIAGE_PROMPT
-from backend.utils.helpers import extract_json_from_text
+from backend.utils.helpers import extract_json_from_text, safe_urgency, parse_bool
 
 # Ensure vertexai is initialized once globally or inside the init
 vertexai.init(project=settings.GOOGLE_PROJECT_ID, location=settings.GCP_LOCATION)
@@ -23,12 +23,16 @@ class TriageAnalyzer:
         try:
             response = self.model.generate_content(prompt)
             result = extract_json_from_text(response.text)
-            
-            # Default fallback if parsing fails
-            if "requires_doctor" not in result:
-                return {"summary": response.text, "urgency": "medium", "requires_doctor": True}
-                
-            return result
+
+            if not isinstance(result, dict):
+                result = {}
+            summary = str(result.get("summary", "")).strip() or str(response.text).strip() or "No summary generated."
+            urgency = safe_urgency(str(result.get("urgency", "medium")))
+            requires_doctor = parse_bool(result.get("requires_doctor"), default=(urgency == "high"))
+            if urgency == "high":
+                requires_doctor = True
+
+            return {"summary": summary, "urgency": urgency, "requires_doctor": requires_doctor}
         except Exception as e:
             print(f"Error in TriageAnalyzer: {e}")
             return {"summary": "Triage analysis failed.", "urgency": "high", "requires_doctor": True}
