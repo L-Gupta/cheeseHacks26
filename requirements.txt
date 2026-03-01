@@ -1,24 +1,97 @@
+# Web API
 fastapi==0.134.0
+starlette==0.52.1
 uvicorn==0.27.1
-SQLAlchemy==2.0.47
+anyio==4.12.1
+h11==0.16.0
+click==8.3.1
+colorama==0.4.6
+
+# Data validation and settings
 pydantic==2.12.5
 pydantic-settings==2.13.1
+pydantic_core==2.41.5
+annotated-types==0.7.0
+annotated-doc==0.0.4
+typing-inspection==0.4.2
+typing_extensions==4.15.0
+python-dotenv==1.2.1
+
+# Database
+SQLAlchemy==2.0.47
+greenlet==3.3.2
 pg8000==1.30.5
-python-multipart==0.0.9
+psycopg==3.3.3
+psycopg-binary==3.3.3
+scramp==1.4.8
+asn1crypto==1.5.1
+
+# HTTP and async networking
+requests==2.32.5
+urllib3==2.6.3
+charset-normalizer==3.4.4
+idna==3.11
+certifi==2026.2.25
+aiohttp==3.13.3
+aiohappyeyeballs==2.6.1
+aiosignal==1.4.0
+aiohttp-retry==2.9.1
+attrs==25.4.0
+frozenlist==1.8.0
+multidict==6.7.1
+propcache==0.4.1
+yarl==1.22.0
+orjson==3.11.7
+websockets==16.0
+
+# Google Cloud
+google-api-core==2.30.0
+google-auth==2.48.0
+google-cloud-aiplatform==1.71.1
+google-cloud-bigquery==3.40.1
+google-cloud-core==2.5.0
+google-cloud-resource-manager==1.16.0
+google-cloud-speech==2.25.0
+google-cloud-storage==2.19.0
+google-cloud-texttospeech==2.16.0
+google-crc32c==1.8.0
+google-resumable-media==2.8.0
+googleapis-common-protos==1.72.0
+grpc-google-iam-v1==0.14.3
+grpcio==1.78.0
+grpcio-status==1.71.2
+proto-plus==1.27.1
+protobuf==5.29.6
+pyasn1==0.6.2
+pyasn1_modules==0.4.2
+rsa==4.9.1
+
+# AI / Vector DB
+pinecone==8.1.0
+pinecone-plugin-assistant==3.0.2
+pinecone-plugin-interface==0.0.7
+numpy==2.4.2
+shapely==2.1.2
 
 # Telephony
 twilio==9.10.2
+PyJWT==2.11.0
+python-dateutil==2.9.0.post0
 
-# Vector DB
-pinecone==8.1.0
-
-# PDF Extraction
+# File and document processing
 pdfplumber==0.11.9
+pdfminer.six==20251230
+pypdfium2==5.5.0
+pillow==12.1.1
+python-multipart==0.0.9
 
-# AI & Cloud Ecosystem
-google-cloud-storage==2.19.0
-google-cloud-aiplatform==1.71.1
-google-cloud-speech==2.25.0
-google-cloud-texttospeech==2.16.0
-websockets==16.0
-requests==2.32.5
+# Crypto and low-level helpers
+cryptography==46.0.5
+cffi==2.0.0
+pycparser==3.0
+
+# Misc
+docstring_parser==0.17.0
+packaging==24.2
+six==1.17.0
+tzdata==2025.3
