@@ -22,7 +22,7 @@ export default function Home() {
 
   // Form state
   const [patientId, setPatientId] = useState("");
-  const [followUpDate, setFollowUpDate] = useState("");
+  const [followUpDateTime, setFollowUpDateTime] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -32,6 +32,11 @@ export default function Home() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const formatForDateTimeLocal = (date: Date) => {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  };
 
   const fetchData = async () => {
     try {
@@ -50,27 +55,26 @@ export default function Home() {
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file || !patientId || !followUpDate) return alert("Please fill all fields");
+    if (!file || !patientId || !followUpDateTime) return alert("Please fill all fields");
 
     const selectedPatient = patients.find((p) => p.id === patientId);
     if (!selectedPatient) {
       return alert("Selected patient not found in roster.");
     }
 
-    const selectedDate = new Date(followUpDate);
-    const today = new Date();
-    selectedDate.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
-    const dayDiff = Math.ceil((selectedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    if (dayDiff < 0) {
-      return alert("Follow-up date cannot be in the past.");
+    const scheduledAt = new Date(followUpDateTime);
+    if (Number.isNaN(scheduledAt.getTime())) {
+      return alert("Invalid follow-up date/time.");
+    }
+    if (scheduledAt.getTime() <= Date.now()) {
+      return alert("Follow-up date/time must be in the future.");
     }
 
     setUploading(true);
     const formData = new FormData();
     formData.append("patient_name", selectedPatient.name);
     formData.append("phone_number", selectedPatient.phone_number);
-    formData.append("followup_days", String(dayDiff));
+    formData.append("followup_datetime", scheduledAt.toISOString());
     formData.append("doctor_id", selectedPatient.doctor_id || "default-doctor");
     formData.append("file", file);
 
@@ -84,7 +88,7 @@ export default function Home() {
         alert("Consultation uploaded & scheduled successfully!");
         setFile(null);
         setPatientId("");
-        setFollowUpDate("");
+        setFollowUpDateTime("");
         setActiveTab("dashboard");
         fetchData();
       } else {
@@ -313,11 +317,12 @@ export default function Home() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-300">Follow-up Date</label>
+                    <label className="text-sm font-medium text-slate-300">Follow-up Date & Time</label>
                     <input
-                      type="date"
-                      value={followUpDate}
-                      onChange={(e) => setFollowUpDate(e.target.value)}
+                      type="datetime-local"
+                      value={followUpDateTime}
+                      onChange={(e) => setFollowUpDateTime(e.target.value)}
+                      min={formatForDateTimeLocal(new Date(Date.now() + 60 * 1000))}
                       className="w-full bg-slate-950/50 border border-white/10 rounded-xl py-3.5 px-4 text-slate-200 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition [color-scheme:dark]"
                       required
                     />

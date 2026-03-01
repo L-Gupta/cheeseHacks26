@@ -18,7 +18,8 @@ router = APIRouter(tags=["upload"])
 async def upload_consultation(
     patient_name: str = Form(...),
     phone_number: str = Form(...),
-    followup_days: int = Form(...),
+    followup_days: int | None = Form(None),
+    followup_datetime: str | None = Form(None),
     file: UploadFile = File(...),
     doctor_id: str = Form("default-doctor"),
     db: Session = Depends(get_db),
@@ -36,11 +37,37 @@ async def upload_consultation(
             status_code=400,
             detail={"error": "INVALID_FILE_TYPE", "message": "Only PDF files are accepted."},
         )
-    if followup_days < 0:
-        raise HTTPException(
-            status_code=400,
-            detail={"error": "INVALID_FOLLOWUP_DAYS", "message": "followup_days must be >= 0."},
-        )
+    follow_up_date: datetime
+    if followup_datetime:
+        try:
+            parsed = datetime.fromisoformat(followup_datetime.replace("Z", "+00:00"))
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "INVALID_FOLLOWUP_DATETIME", "message": "followup_datetime must be ISO-8601."},
+            )
+
+        # Treat naive datetimes as UTC to keep the API deterministic.
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        follow_up_date = parsed.astimezone(timezone.utc)
+        if follow_up_date <= datetime.now(timezone.utc):
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "INVALID_FOLLOWUP_DATETIME", "message": "followup_datetime must be in the future."},
+            )
+    else:
+        if followup_days is None:
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "MISSING_FOLLOWUP", "message": "Provide followup_datetime or followup_days."},
+            )
+        if followup_days < 0:
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "INVALID_FOLLOWUP_DAYS", "message": "followup_days must be >= 0."},
+            )
+        follow_up_date = datetime.now(timezone.utc) + timedelta(days=followup_days)
 
     ok_phone, normalized_phone = normalize_phone_number(phone_number)
     if not ok_phone:
@@ -81,7 +108,6 @@ async def upload_consultation(
             detail={"error": "PDF_TEXT_EXTRACTION_FAILED", "message": "Could not extract text from PDF."},
         )
 
-    follow_up_date = datetime.now(timezone.utc) + timedelta(days=followup_days)
     patient = db.query(Patient).filter(Patient.phone_number == normalized_phone).first()
     if not patient:
         patient = Patient(name=patient_name.strip(), phone_number=normalized_phone, doctor_id=doctor_id)
@@ -142,7 +168,8 @@ async def upload_consultation(
 async def upload_consultation_legacy(
     patient_name: str = Form(...),
     phone_number: str = Form(...),
-    followup_days: int = Form(...),
+    followup_days: int | None = Form(None),
+    followup_datetime: str | None = Form(None),
     file: UploadFile = File(...),
     doctor_id: str = Form("default-doctor"),
     db: Session = Depends(get_db),
@@ -151,6 +178,7 @@ async def upload_consultation_legacy(
         patient_name=patient_name,
         phone_number=phone_number,
         followup_days=followup_days,
+        followup_datetime=followup_datetime,
         file=file,
         doctor_id=doctor_id,
         db=db,

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 
 from config.database import get_db
 from models.consultation import Consultation
@@ -13,7 +13,7 @@ def _trigger_scheduled_followups(db: Session):
     Called by Google Cloud Scheduler every X minutes.
     Finds pending consultations due for follow-up and initiates calls via Twilio.
     """
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     
     # 1. Find all due consultations
     due_consultations = db.query(Consultation).filter(
