@@ -4,6 +4,7 @@ from backend.config.settings import settings
 from backend.config.database import engine, Base
 from backend.routes import followups, twilio_webhook, patient_routes, upload
 from backend.services import scheduler
+import uvicorn
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -33,7 +34,6 @@ def read_root():
     return {"status": "ok", "app": settings.APP_NAME}
 
 if __name__ == "__main__":
-    import uvicorn
     # Cloud Run expects the app to bind to 0.0.0.0:8080 usually via PORT env var
     import os
     port = int(os.environ.get("PORT", 8000))
