@@ -3,6 +3,10 @@ import json
 import asyncio
 from backend.config.settings import settings
 from backend.services.gemini_service import GeminiService
+from backend.agents.triage_logic import TriageAnalyzer
+from backend.services.escalation_service import notify_doctor
+from backend.config.database import SessionLocal
+from backend.models.consultation import Consultation
 
 router = APIRouter(prefix="/twilio", tags=["twilio"])
 
@@ -32,6 +36,7 @@ async def websocket_endpoint(websocket: WebSocket, consultation_id: str):
     print(f"WebSocket connection opened for consultation: {consultation_id}")
     
     stream_sid = None
+    triage_result = None
     
     # Initialize our AI agent which encapsulates Vertex AI, Google STT, and Google TTS
     agent = GeminiService(consultation_id=consultation_id)
@@ -78,3 +83,38 @@ async def websocket_endpoint(websocket: WebSocket, consultation_id: str):
     finally:
         sender_task.cancel()
         await agent.close()
+
+        # Analyze transcript after call and auto-update consultation status.
+        transcript = agent.get_transcript()
+        try:
+            triage_result = TriageAnalyzer().analyze_call(transcript)
+        except Exception as e:
+            print(f"Triage failed for consultation {consultation_id}: {e}")
+            triage_result = {
+                "summary": "Triage analysis failed.",
+                "urgency": "high",
+                "requires_doctor": True
+            }
+
+        requires_doctor = bool(triage_result.get("requires_doctor", False))
+        new_status = "escalated" if requires_doctor else "completed"
+
+        db = SessionLocal()
+        try:
+            consultation = db.query(Consultation).filter(Consultation.id == consultation_id).first()
+            if consultation:
+                consultation.status = new_status
+                db.commit()
+                db.refresh(consultation)
+
+            if requires_doctor:
+                notify_doctor(
+                    consultation_id=consultation_id,
+                    summary=triage_result.get("summary", ""),
+                    urgency=triage_result.get("urgency", "high")
+                )
+        except Exception as e:
+            print(f"Failed to update consultation status for {consultation_id}: {e}")
+            db.rollback()
+        finally:
+            db.close()

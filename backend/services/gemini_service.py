@@ -15,6 +15,7 @@ class GeminiService:
         self.consultation_id = consultation_id
         self.patient_name = "Patient"
         self.consultation_summary = "General follow-up."
+        self.transcript_lines: list[str] = []
         
         # Audio handling sub-services (Google Cloud native)
         self.stt = STTService(callback=self._on_patient_speaking)
@@ -55,6 +56,7 @@ class GeminiService:
         """Initiate the call with a synthesized greeting from Google TTS."""
         greeting = f"Hi {self.patient_name}, this is Emily calling from the clinic to see how you're feeling since your last visit. Is now a good time to talk?"
         print("Gemini Agent Speaking:", greeting)
+        self.transcript_lines.append(f"AI: {greeting}")
         
         async for chunk in self.tts.synthesize(greeting):
             await self.audio_out_queue.put(chunk)
@@ -66,10 +68,12 @@ class GeminiService:
     async def _on_patient_speaking(self, text: str):
         """Callback from Google STT when the patient finishes a sentence."""
         print("Patient Said:", text)
+        self.transcript_lines.append(f"Patient: {text}")
         try:
             response = self.chat.send_message(text)
             ai_text = response.text
             print("Gemini Agent Replying:", ai_text)
+            self.transcript_lines.append(f"AI: {ai_text}")
             
             # Send the LLM output back to TTS
             async for chunk in self.tts.synthesize(ai_text):
@@ -89,3 +93,7 @@ class GeminiService:
         """Cleanup Streams."""
         await self.stt.close()
         await self.audio_out_queue.put(None)
+
+    def get_transcript(self) -> str:
+        """Returns the full transcript captured during the call session."""
+        return "\n".join(self.transcript_lines).strip()
