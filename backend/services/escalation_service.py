@@ -1,6 +1,6 @@
 import logging
-from backend.config.settings import settings
-from backend.services.call_service import get_twilio_client
+from config.settings import settings
+from services.call_service import get_twilio_client
 
 logger = logging.getLogger("escalation")
 

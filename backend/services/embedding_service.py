@@ -1,6 +1,6 @@
 from vertexai.language_models import TextEmbeddingModel
 import vertexai
-from backend.config.settings import settings
+from config.settings import settings
 
 # Usually global init happens in main or once per service
 # vertexai.init(project=settings.GOOGLE_PROJECT_ID, location=settings.GCP_LOCATION)

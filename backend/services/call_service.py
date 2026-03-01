@@ -1,6 +1,6 @@
 from twilio.rest import Client
-from backend.config.settings import settings
-from backend.utils.helpers import normalize_phone_number
+from config.settings import settings
+from utils.helpers import normalize_phone_number
 
 def get_twilio_client():
     if not settings.TWILIO_ACCOUNT_SID or not settings.TWILIO_AUTH_TOKEN:

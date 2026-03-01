@@ -3,15 +3,15 @@ import re
 import uuid
 import vertexai
 from vertexai.generative_models import GenerativeModel
-from backend.config.settings import settings
-from backend.agents.prompts import get_system_prompt
-from backend.services.embedding_service import EmbeddingService
-from backend.services.pinecone_service import PineconeService
-from backend.services.speech_to_text import STTService
-from backend.services.text_to_speech import TTSService
-from backend.config.database import SessionLocal
-from backend.models.consultation import Consultation
-from backend.models.patient import Patient
+from config.settings import settings
+from agents.prompts import get_system_prompt
+from services.embedding_service import EmbeddingService
+from services.pinecone_service import PineconeService
+from services.speech_to_text import STTService
+from services.text_to_speech import TTSService
+from config.database import SessionLocal
+from models.consultation import Consultation
+from models.patient import Patient
 
 class GeminiService:
     def __init__(self, consultation_id: str, on_transcript_update=None):

@@ -3,14 +3,14 @@ import uuid
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 from sqlalchemy.orm import Session
 
-from backend.config.database import get_db
-from backend.models.consultation import Consultation
-from backend.models.patient import Patient
-from backend.services.pdf_parser import extract_text_from_pdf
-from backend.services.embedding_service import EmbeddingService
-from backend.services.pinecone_service import PineconeService
-from backend.services.gcs_service import GCSService
-from backend.utils.helpers import chunk_text, normalize_phone_number
+from config.database import get_db
+from models.consultation import Consultation
+from models.patient import Patient
+from services.pdf_parser import extract_text_from_pdf
+from services.embedding_service import EmbeddingService
+from services.pinecone_service import PineconeService
+from services.gcs_service import GCSService
+from utils.helpers import chunk_text, normalize_phone_number
 
 router = APIRouter(tags=["upload"])
 

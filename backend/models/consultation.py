@@ -1,8 +1,8 @@
 from sqlalchemy import Column, String, DateTime, ForeignKey, Uuid
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from backend.config.database import Base
-from backend.models.patient import Patient
+from config.database import Base
+from models.patient import Patient
 import uuid
 
 class Consultation(Base):

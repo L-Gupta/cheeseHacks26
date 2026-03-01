@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.config.settings import settings
-from backend.config.database import engine, Base
-from backend.routes import followups, twilio_webhook, patient_routes, upload
-from backend.services import scheduler
+from config.settings import settings
+from config.database import engine, Base
+from routes import followups, twilio_webhook, patient_routes, upload
+from services import scheduler
 
 # Create database tables
 Base.metadata.create_all(bind=engine)

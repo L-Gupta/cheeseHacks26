@@ -1,8 +1,8 @@
 from sqlalchemy import Column, String, DateTime, ForeignKey, Integer, Uuid, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from backend.config.database import Base
-from backend.models.consultation import Consultation
+from config.database import Base
+from models.consultation import Consultation
 import uuid
 
 class CallLog(Base):

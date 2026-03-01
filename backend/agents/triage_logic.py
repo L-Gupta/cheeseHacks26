@@ -1,8 +1,8 @@
 from vertexai.generative_models import GenerativeModel
 import vertexai
-from backend.config.settings import settings
-from backend.agents.prompts import TRIAGE_PROMPT
-from backend.utils.helpers import extract_json_from_text, safe_urgency, parse_bool
+from config.settings import settings
+from agents.prompts import TRIAGE_PROMPT
+from utils.helpers import extract_json_from_text, safe_urgency, parse_bool
 
 # Ensure vertexai is initialized once globally or inside the init
 vertexai.init(project=settings.GOOGLE_PROJECT_ID, location=settings.GCP_LOCATION)

@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
 
-from backend.config.database import get_db
-from backend.models.consultation import Consultation
-from backend.services.call_service import initiate_outbound_call
+from config.database import get_db
+from models.consultation import Consultation
+from services.call_service import initiate_outbound_call
 
 router = APIRouter(tags=["cloud_scheduler"])
 

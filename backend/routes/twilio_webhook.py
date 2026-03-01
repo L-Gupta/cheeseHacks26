@@ -3,14 +3,14 @@ import json
 import asyncio
 import time
 import uuid
-from backend.config.settings import settings
-from backend.services.gemini_service import GeminiService
-from backend.agents.triage_logic import TriageAnalyzer
-from backend.services.escalation_service import notify_doctor
-from backend.services.session_state import session_state_store
-from backend.config.database import SessionLocal
-from backend.models.consultation import Consultation
-from backend.models.call_log import CallLog
+from config.settings import settings
+from services.gemini_service import GeminiService
+from agents.triage_logic import TriageAnalyzer
+from services.escalation_service import notify_doctor
+from services.session_state import session_state_store
+from config.database import SessionLocal
+from models.consultation import Consultation
+from models.call_log import CallLog
 
 router = APIRouter(prefix="/twilio", tags=["twilio"])
 

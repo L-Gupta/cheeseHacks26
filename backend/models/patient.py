@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, DateTime, Uuid
 from sqlalchemy.sql import func
-from backend.config.database import Base
+from config.database import Base
 import uuid
 
 class Patient(Base):

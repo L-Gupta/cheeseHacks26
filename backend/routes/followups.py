@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from backend.config.database import get_db
-from backend.models.patient import Patient
-from backend.models.consultation import Consultation
-from backend.models.call_log import CallLog
+from config.database import get_db
+from models.patient import Patient
+from models.consultation import Consultation
+from models.call_log import CallLog
 from fastapi import HTTPException
 from pydantic import BaseModel
 

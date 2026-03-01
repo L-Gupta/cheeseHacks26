@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 import uuid
 from pydantic import BaseModel
 
-from backend.config.database import get_db
-from backend.models.patient import Patient
+from config.database import get_db
+from models.patient import Patient
 
 router = APIRouter(prefix="/patients", tags=["patients"])
 

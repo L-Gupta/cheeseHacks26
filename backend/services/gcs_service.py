@@ -1,5 +1,5 @@
 from google.cloud import storage
-from backend.config.settings import settings
+from config.settings import settings
 
 class GCSService:
     def __init__(self):
