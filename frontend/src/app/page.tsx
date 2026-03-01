@@ -52,11 +52,26 @@ export default function Home() {
     e.preventDefault();
     if (!file || !patientId || !followUpDate) return alert("Please fill all fields");
 
+    const selectedPatient = patients.find((p) => p.id === patientId);
+    if (!selectedPatient) {
+      return alert("Selected patient not found in roster.");
+    }
+
+    const selectedDate = new Date(followUpDate);
+    const today = new Date();
+    selectedDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    const dayDiff = Math.ceil((selectedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    if (dayDiff < 0) {
+      return alert("Follow-up date cannot be in the past.");
+    }
+
     setUploading(true);
     const formData = new FormData();
-    formData.append("patient_id", patientId);
-    formData.append("doctor_id", "dr_123");
-    formData.append("follow_up_date", new Date(followUpDate).toISOString());
+    formData.append("patient_name", selectedPatient.name);
+    formData.append("phone_number", selectedPatient.phone_number);
+    formData.append("followup_days", String(dayDiff));
+    formData.append("doctor_id", selectedPatient.doctor_id || "default-doctor");
     formData.append("file", file);
 
     try {
@@ -292,7 +307,6 @@ export default function Home() {
                         {patients.map(p => (
                           <option key={p.id} value={p.id}>{p.name}</option>
                         ))}
-                        <option value="NEW_PATIENT_UUID_MOCK">Mock New Patient</option>
                       </select>
                       <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▼</div>
                     </div>
