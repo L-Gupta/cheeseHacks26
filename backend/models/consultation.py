@@ -10,10 +10,11 @@ class Consultation(Base):
 
     id = Column(Uuid, primary_key=True, default=uuid.uuid4, index=True)
     patient_id = Column(Uuid, ForeignKey("patients.id"))
+    doctor_id = Column(String)
     pdf_url = Column(String)
     summary_text = Column(String)
     follow_up_date = Column(DateTime(timezone=True))
-    status = Column(String, default="pending") # pending, completed, escalated
+    status = Column(String, default="pending") # pending, in_progress, completed, escalated
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     patient = relationship("Patient")

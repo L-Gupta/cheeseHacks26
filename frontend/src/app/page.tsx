@@ -83,7 +83,7 @@ export default function Home() {
     }
   };
 
-  const markResolved = async (consultationId: str) => {
+  const markResolved = async (consultationId: string) => {
     try {
       const res = await fetch(`http://localhost:8000/doctor/consultations/${consultationId}/status`, {
         method: "PUT",

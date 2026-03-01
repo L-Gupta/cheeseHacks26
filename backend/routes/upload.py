@@ -47,9 +47,15 @@ async def upload_consultation(
     if not summary_text:
         raise HTTPException(400, "Could not extract text from PDF.")
 
+    try:
+        patient_uuid = uuid.UUID(patient_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid patient_id format. Must be a UUID.")
+
     # Save to Consultation Database
     db_consultation = Consultation(
-        patient_id=uuid.UUID(patient_id),
+        patient_id=patient_uuid,
+        doctor_id=doctor_id,
         pdf_url=pdf_url,
         summary_text=summary_text,
         follow_up_date=follow_up_date

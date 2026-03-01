@@ -35,5 +35,7 @@ settings = Settings()
 
 if settings.GOOGLE_APPLICATION_CREDENTIALS:
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = settings.GOOGLE_APPLICATION_CREDENTIALS
+    if not os.path.exists(settings.GOOGLE_APPLICATION_CREDENTIALS):
+        print("Warning: GOOGLE_APPLICATION_CREDENTIALS path does not exist on this machine.")
 if settings.GOOGLE_PROJECT_ID:
     os.environ["GOOGLE_PROJECT_ID"] = settings.GOOGLE_PROJECT_ID

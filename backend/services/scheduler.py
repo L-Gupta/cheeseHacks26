@@ -29,6 +29,11 @@ def trigger_scheduled_followups(db: Session = Depends(get_db)):
     # 2. Trigger calls
     for consultation in due_consultations:
         try:
+            # Lock the consultation before dialing to avoid duplicate calls from overlapping cron runs.
+            consultation.status = "in_progress"
+            db.commit()
+            db.refresh(consultation)
+
             # We fetch the patient to get phone number
             patient = consultation.patient
             success = initiate_outbound_call(
@@ -36,11 +41,17 @@ def trigger_scheduled_followups(db: Session = Depends(get_db)):
                 consultation_id=consultation.id
             )
             if success:
-                # Mark as processing (or let the webhook do it)
-                results.append({"id": consultation.id, "status": "call_initiated"})
+                results.append({"id": consultation.id, "status": "in_progress"})
             else:
+                consultation.status = "pending"
+                db.commit()
                 results.append({"id": consultation.id, "status": "call_failed"})
         except Exception as e:
+            try:
+                consultation.status = "pending"
+                db.commit()
+            except Exception:
+                db.rollback()
             results.append({"id": consultation.id, "status": f"error: {str(e)}"})
 
     return {"processed": len(due_consultations), "results": results}
