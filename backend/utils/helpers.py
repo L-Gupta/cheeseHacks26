@@ -12,3 +12,17 @@ def extract_json_from_text(text: str) -> dict:
         return {}
     except Exception:
         return {}
+
+def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> list[str]:
+    """Splits a long string into overlapping chunks for vector embeddings."""
+    if not text:
+        return []
+    
+    chunks = []
+    start = 0
+    while start < len(text):
+        end = start + chunk_size
+        chunks.append(text[int(start):int(end)])
+        start += chunk_size - overlap
+    
+    return chunks

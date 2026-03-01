@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+import uuid
 from pydantic import BaseModel
 
 from backend.config.database import get_db
@@ -30,7 +31,12 @@ def create_patient(patient: PatientCreate, db: Session = Depends(get_db)):
 
 @router.get("/{patient_id}")
 def get_patient(patient_id: str, db: Session = Depends(get_db)):
-    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    try:
+        pid = uuid.UUID(patient_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid UUID format")
+        
+    patient = db.query(Patient).filter(Patient.id == pid).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     return patient

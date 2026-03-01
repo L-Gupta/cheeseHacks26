@@ -37,6 +37,18 @@ class PineconeService:
         except Exception as e:
              print(f"Error upserting to Pinecone: {e}")
 
+    def upsert_chunks(self, vectors: list[dict]):
+        """Upserts a batch of chunk vectors to Pinecone."""
+        if not self.index or not vectors:
+            return False
+            
+        try:
+            self.index.upsert(vectors=vectors)
+            return True
+        except Exception as e:
+            print(f"Error upserting chunks to Pinecone: {e}")
+            return False
+
     def query_context(self, consultation_id: str) -> dict:
         """Fetches the metadata back from Pinecone based on ID if we just want context."""
         try:

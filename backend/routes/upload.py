@@ -10,6 +10,7 @@ from backend.services.pdf_parser import extract_text_from_pdf
 from backend.services.embedding_service import EmbeddingService
 from backend.services.pinecone_service import PineconeService
 from backend.services.gcs_service import GCSService
+from backend.utils.helpers import chunk_text
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
@@ -64,15 +65,27 @@ async def upload_consultation(
     db.commit()
     db.refresh(db_consultation)
     
-    # Generate Embedding & Upsert to Pinecone
-    vector = embedder.generate_embedding(summary_text)
-    if vector:
-        metadata = {
-            "consultation_id": str(db_consultation.id),
-            "patient_id": str(patient_id),
-            "doctor_id": str(doctor_id),
-            "summary_text": summary_text # keeping the raw text in metadata is handy for RAG retrieval
-        }
-        pinecone_db.upsert_consultation(str(db_consultation.id), vector, metadata)
+    # Chunk text, generate Embeddings & Upsert to Pinecone
+    chunks = chunk_text(summary_text, chunk_size=800, overlap=100)
+    vectors_to_upsert = []
+    
+    for i, chunk in enumerate(chunks):
+        vector = embedder.generate_embedding(chunk)
+        if vector:
+            metadata = {
+                "consultation_id": str(db_consultation.id),
+                "patient_id": str(patient_id),
+                "doctor_id": str(doctor_id),
+                "summary_text": chunk, # keeping the chunk's text in metadata is required for RAG retrieval
+                "chunk_index": i
+            }
+            vectors_to_upsert.append({
+                "id": f"{db_consultation.id}_chunk_{i}",
+                "values": vector,
+                "metadata": metadata
+            })
+            
+    if vectors_to_upsert:
+        pinecone_db.upsert_chunks(vectors_to_upsert)
     
     return db_consultation
