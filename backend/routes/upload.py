@@ -49,7 +49,7 @@ async def upload_consultation(
 
     # Save to Consultation Database
     db_consultation = Consultation(
-        patient_id=patient_id,
+        patient_id=uuid.UUID(patient_id),
         pdf_url=pdf_url,
         summary_text=summary_text,
         follow_up_date=follow_up_date

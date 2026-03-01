@@ -20,15 +20,11 @@ class Settings(BaseSettings):
     GOOGLE_APPLICATION_CREDENTIALS: str = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
     
     # Vertex AI Settings
-    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     VERTEX_AI_MODEL: str = os.getenv("VERTEX_AI_MODEL", "gemini-2.5-flash")
     
     # Pinecone
     PINECONE_API_KEY: str = os.getenv("PINECONE_API_KEY", "")
     PINECONE_ENV: str = os.getenv("PINECONE_ENV", "")
-    
-    # Deepgram
-    DEEPGRAM_API_KEY: str = os.getenv("DEEPGRAM_API_KEY", "")
 
     # Hostname (for Twilio Webhooks)
     HOST_DOMAIN: str = os.getenv("HOST_DOMAIN", "") # e.g. "my-app-xyz.a.run.app"
@@ -36,3 +32,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env")
 
 settings = Settings()
+
+if settings.GOOGLE_APPLICATION_CREDENTIALS:
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = settings.GOOGLE_APPLICATION_CREDENTIALS
+if settings.GOOGLE_PROJECT_ID:
+    os.environ["GOOGLE_PROJECT_ID"] = settings.GOOGLE_PROJECT_ID
