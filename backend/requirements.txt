@@ -1,6 +1,6 @@
 fastapi==0.109.2
 uvicorn==0.27.1
-sqlalchemy==2.0.25
+sqlalchemy>=2.0.36
 pydantic>=2.9.0
 pydantic-settings>=2.4.0
 pg8000==1.30.5

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload &amp; Parse Test</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 0 auto; padding: 1.5rem; background: #0f0f0f; color: #e0e0e0; min-height: 100vh; }
+    h1 { font-size: 1.25rem; margin-bottom: 0.5rem; color: #fff; }
+    h2 { font-size: 1rem; margin: 1.5rem 0 0.5rem; color: #a0a0a0; font-weight: 600; }
+    .sub { font-size: 0.8rem; color: #707070; margin-bottom: 1rem; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.25rem; color: #b0b0b0; }
+    input, button { font-size: 0.9rem; padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid #333; }
+    input { width: 100%; background: #1a1a1a; color: #e0e0e0; margin-bottom: 0.75rem; }
+    input[type="file"] { padding: 0.35rem 0; }
+    button { background: #2a7de0; color: #fff; border: none; cursor: pointer; font-weight: 500; padding: 0.5rem 1rem; }
+    button:hover { background: #1e6bc7; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .box { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+    .result { white-space: pre-wrap; word-break: break-word; font-size: 0.85rem; max-height: 320px; overflow-y: auto; background: #0d0d0d; padding: 0.75rem; border-radius: 6px; margin-top: 0.5rem; }
+    .result.empty { color: #606060; font-style: italic; }
+    .error { color: #e06060; }
+    .success { color: #60c060; }
+    .id-copy { font-family: monospace; font-size: 0.8rem; background: #252525; padding: 0.25rem 0.5rem; border-radius: 4px; margin-top: 0.25rem; }
+  </style>
+</head>
+<body>
+  <h1>Upload &amp; Parse Test</h1>
+  <p class="sub">Test consultation PDF upload and parsing (backend must be running on API URL). <a href="mic-test.html" style="color:#6ab;">Mic → Gemini test</a></p>
+
+  <div class="box">
+    <label for="apiUrl">API base URL</label>
+    <input type="text" id="apiUrl" value="http://localhost:8000" placeholder="http://localhost:8000" />
+  </div>
+
+  <h2>0. Example data</h2>
+  <div class="box">
+    <p class="sub">Seed one patient (Abhinav Jain) and one consultation (back pain, 2-day follow-up) for testing.</p>
+    <button type="button" id="btnSeed">Seed example data</button>
+    <div id="seedResult" class="result empty">—</div>
+  </div>
+
+  <h2>1. Create patient</h2>
+  <div class="box">
+    <label for="pName">Name</label>
+    <input type="text" id="pName" placeholder="Jane Doe" />
+    <label for="pPhone">Phone number</label>
+    <input type="text" id="pPhone" placeholder="+15551234567" />
+    <label for="pDoctor">Doctor ID</label>
+    <input type="text" id="pDoctor" placeholder="dr_123" value="dr_123" />
+    <button type="button" id="btnPatient">Create patient</button>
+    <div id="patientResult" class="result empty">—</div>
+    <div id="patientIdDisplay" class="id-copy" style="display:none;">Patient ID: <span id="patientIdValue"></span></div>
+  </div>
+
+  <h2>2. Upload PDF &amp; parse</h2>
+  <div class="box">
+    <label for="patientId">Patient ID (use one from above)</label>
+    <input type="text" id="patientId" placeholder="uuid from create patient" />
+    <label for="followUpDate">Follow-up date</label>
+    <input type="datetime-local" id="followUpDate" />
+    <label for="pdfFile">PDF file</label>
+    <input type="file" id="pdfFile" accept=".pdf" />
+    <button type="button" id="btnUpload">Upload &amp; parse</button>
+    <div id="uploadResult" class="result empty">—</div>
+  </div>
+
+  <script>
+    const apiUrl = () => document.getElementById('apiUrl').value.replace(/\/$/, '');
+    const $ = (id) => document.getElementById(id);
+
+    $('btnSeed').onclick = async () => {
+      const out = $('seedResult');
+      out.className = 'result';
+      out.textContent = 'Seeding…';
+      try {
+        const res = await fetch(apiUrl() + '/test/seed-example', { method: 'POST' });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          out.textContent = 'Error: ' + (data.detail || res.statusText);
+          out.classList.add('error');
+          return;
+        }
+        out.textContent = 'Created: ' + data.patient_name + ' (patient_id: ' + data.patient_id + '), consultation ' + data.consultation_id;
+        out.classList.add('success');
+        $('patientId').value = data.patient_id;
+      } catch (e) {
+        out.textContent = 'Request failed: ' + e.message;
+        out.classList.add('error');
+      }
+    };
+
+    $('btnPatient').onclick = async () => {
+      const name = $('pName').value.trim();
+      const phone = $('pPhone').value.trim();
+      const doctor_id = $('pDoctor').value.trim() || 'dr_123';
+      const out = $('patientResult');
+      const idDisplay = $('patientIdDisplay');
+      const idValue = $('patientIdValue');
+      out.className = 'result';
+      idDisplay.style.display = 'none';
+      if (!name || !phone) {
+        out.textContent = 'Please enter name and phone number.';
+        out.classList.add('error');
+        return;
+      }
+      try {
+        const res = await fetch(apiUrl() + '/patients/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, phone_number: phone, doctor_id })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          out.textContent = 'Error: ' + (data.detail || res.statusText || res.status);
+          out.classList.add('error');
+          return;
+        }
+        out.textContent = JSON.stringify(data, null, 2);
+        out.classList.add('success');
+        if (data.id) {
+          idValue.textContent = data.id;
+          idDisplay.style.display = 'block';
+          $('patientId').value = data.id;
+        }
+      } catch (e) {
+        out.textContent = 'Request failed: ' + e.message;
+        out.classList.add('error');
+      }
+    };
+
+    $('btnUpload').onclick = async () => {
+      const patientId = $('patientId').value.trim();
+      const followUpDate = $('followUpDate').value;
+      const fileInput = $('pdfFile');
+      const out = $('uploadResult');
+      out.className = 'result';
+      if (!patientId || !fileInput.files?.length) {
+        out.textContent = 'Please set patient ID and choose a PDF file.';
+        out.classList.add('error');
+        return;
+      }
+      const file = fileInput.files[0];
+      if (!file.name.toLowerCase().endsWith('.pdf')) {
+        out.textContent = 'Please select a PDF file.';
+        out.classList.add('error');
+        return;
+      }
+      const form = new FormData();
+      form.append('patient_id', patientId);
+      form.append('doctor_id', 'dr_123');
+      form.append('follow_up_date', new Date(followUpDate || Date.now()).toISOString());
+      form.append('file', file);
+      try {
+        const res = await fetch(apiUrl() + '/upload/consultation', {
+          method: 'POST',
+          body: form
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          out.textContent = 'Error: ' + (data.detail || res.statusText || res.status);
+          out.classList.add('error');
+          return;
+        }
+        out.textContent = JSON.stringify(data, null, 2);
+        out.classList.add('success');
+      } catch (e) {
+        out.textContent = 'Request failed: ' + e.message;
+        out.classList.add('error');
+      }
+    };
+  </script>
+</body>
+</html>

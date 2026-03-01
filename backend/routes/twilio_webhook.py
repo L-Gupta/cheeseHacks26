@@ -2,8 +2,8 @@ from fastapi import APIRouter, WebSocket, Request, Response
 import json
 import asyncio
 from backend.config.settings import settings
-from backend.services.gemini_service import GeminiService
 
+# GeminiService imports vertexai/protobuf; lazy-import so app starts on Python 3.14 without loading them
 router = APIRouter(prefix="/twilio", tags=["twilio"])
 
 @router.post("/twiml")
@@ -32,7 +32,8 @@ async def websocket_endpoint(websocket: WebSocket, consultation_id: str):
     print(f"WebSocket connection opened for consultation: {consultation_id}")
     
     stream_sid = None
-    
+
+    from backend.services.gemini_service import GeminiService
     # Initialize our AI agent which encapsulates Vertex AI, Google STT, and Google TTS
     agent = GeminiService(consultation_id=consultation_id)
     await agent.initialize()

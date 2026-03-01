@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.config.settings import settings
 from backend.config.database import engine, Base
-from backend.routes import followups, twilio_webhook, patient_routes, upload
+from backend.routes import followups, twilio_webhook, patient_routes, upload, test_chat
 from backend.services import scheduler
 
 # Create database tables
@@ -27,6 +27,7 @@ app.include_router(patient_routes.router)
 app.include_router(twilio_webhook.router)
 app.include_router(scheduler.router)
 app.include_router(upload.router)
+app.include_router(test_chat.router)
 
 @app.get("/")
 def read_root():

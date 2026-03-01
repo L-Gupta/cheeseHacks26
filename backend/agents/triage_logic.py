@@ -5,7 +5,7 @@ from backend.agents.prompts import TRIAGE_PROMPT
 from backend.utils.helpers import extract_json_from_text
 
 # Ensure vertexai is initialized once globally or inside the init
-vertexai.init(project=settings.GCP_PROJECT_ID, location=settings.GCP_LOCATION)
+vertexai.init(project=settings.GOOGLE_PROJECT_ID, location=settings.GCP_LOCATION)
 
 class TriageAnalyzer:
     def __init__(self):

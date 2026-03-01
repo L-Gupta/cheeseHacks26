@@ -1,0 +1,7 @@
+{
+  "name": "upload-test",
+  "private": true,
+  "scripts": {
+    "start": "npx --yes serve . -l 3001"
+  }
+}
